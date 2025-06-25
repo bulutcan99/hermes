@@ -8,9 +8,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: hermes
-      POSTGRES_PASSWORD: 12345
-      POSTGRES_DB: hermes
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
