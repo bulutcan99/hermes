@@ -1,12 +1,13 @@
-use tracing::info;
 use crate::common::config::db::DB;
 use crate::common::config::environment::Environment;
-use crate::common::logger;
+use tracing::info;
+use crate::common::config::logger;
 
 mod common;
+mod auth;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     Environment::from_env()
         .load()
         .expect("Environment loading failed!");
@@ -16,4 +17,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("DB initialized!");
     Ok(())
 }
-

@@ -1016,6 +1016,51 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
+name = "hermes"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "axum-extra",
+ "axum-server",
+ "base64",
+ "bb8",
+ "chrono",
+ "dotenvy",
+ "erased-serde",
+ "hmac",
+ "http",
+ "include_dir",
+ "jsonwebtoken",
+ "lazy_static",
+ "lettre",
+ "once_cell",
+ "regex",
+ "rusty-sidekiq",
+ "secrecy",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "serde_variant",
+ "serde_yaml",
+ "sha2",
+ "socketioxide",
+ "sqlx",
+ "tera",
+ "thiserror 2.0.12",
+ "time",
+ "tokio",
+ "tower",
+ "tower-cookies",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "uuid",
+ "validator",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2235,6 +2280,15 @@ name = "sdd"
 version = "3.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "584e070911c7017da6cb2eb0788d09f43d789029b5877d3e5ecc8acf86ceee21"
+
+[[package]]
+name = "secrecy"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a"
+dependencies = [
+ "zeroize",
+]
 
 [[package]]
 name = "serde"
@@ -3834,48 +3888,6 @@ dependencies = [
  "quote",
  "syn",
  "synstructure",
-]
-
-[[package]]
-name = "zero2prod"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "axum-extra",
- "axum-server",
- "base64",
- "bb8",
- "chrono",
- "dotenvy",
- "erased-serde",
- "hmac",
- "http",
- "include_dir",
- "jsonwebtoken",
- "lazy_static",
- "lettre",
- "regex",
- "rusty-sidekiq",
- "serde",
- "serde_derive",
- "serde_json",
- "serde_variant",
- "serde_yaml",
- "sha2",
- "socketioxide",
- "sqlx",
- "tera",
- "thiserror 2.0.12",
- "time",
- "tokio",
- "tower",
- "tower-cookies",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "uuid",
- "validator",
 ]
 
 [[package]]

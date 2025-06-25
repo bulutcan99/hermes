@@ -67,7 +67,7 @@ impl std::fmt::Display for LogLevel {
 }
 
 // Function to initialize the logger based on the provided configuration
-const MODULE_WHITELIST: &[&str] = &["message", "zero2prod","sqlx::query"];
+const MODULE_WHITELIST: &[&str] = &["message", "hermes","sqlx::query"];
 
 // Keep nonblocking file appender work guard
 static NONBLOCKING_WORK_GUARD_KEEP: OnceLock<WorkerGuard> = OnceLock::new();

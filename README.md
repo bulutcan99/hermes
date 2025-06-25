@@ -1,18 +1,25 @@
-# zero2prod
+# hermes
 
-## cargo install cargo-watch
+------------------------
+## Requirements ##
+
+### cargo install cargo-watch
 -> cargo watch -x check
 -> cargo watch -x check -x test -x run
 
-## cargo install cargo-tarpaulin
+### cargo install cargo-tarpaulin
 cargo tarpaulin --ignore-tests
 
-## rustup component add clippy
+### rustup component add clippy
 cargo clippy
 cargo clippy -- -D warnings
 
-## rustup component add rustfmt
+### rustup component add rustfmt
 cargo fmt -- --check
 
-## cargo install cargo-audit
+### cargo install cargo-audit
 cargo audit
+
+### cargo install sqlx-cli 
+sqlx migrate run       
+--------------------------
