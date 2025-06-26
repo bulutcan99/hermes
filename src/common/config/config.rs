@@ -1,3 +1,6 @@
+use crate::common::config::environment::Environment;
+use crate::common::config::error::ConfigError;
+use crate::common::data;
 use lazy_static::lazy_static;
 use serde::Deserialize;
 use serde_derive::Serialize;
@@ -5,9 +8,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
-use crate::common::config::environment::Environment;
-use crate::common::config::error::ConfigError;
-use crate::common::{data, logger};
+use crate::common::config::logger;
 
 lazy_static! {
     static ref DEFAULT_FOLDER: PathBuf = PathBuf::from("config");

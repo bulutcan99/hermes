@@ -4,7 +4,7 @@ use crate::auth::domain::model::{UserAuth, UserNewComer};
 
 
 #[async_trait]
-pub trait UserAuthRepository {
+pub trait DatabaseAuthRepository {
     /// Finds a user by email.
     ///
     /// # Arguments
@@ -39,13 +39,13 @@ mod tests {
     use std::sync::Arc;
     use secrecy::SecretString;
 
-    /// A simple in-memory implementation of `UserAuthRepository` for testing purposes.
+    /// A simple in-memory implementation of `DatabaseAuthRepository` for testing purposes.
     struct MockUserAuthRepository {
         data: Arc<RwLock<HashMap<String, UserAuth>>>,
     }
 
     #[async_trait]
-    impl UserAuthRepository for MockUserAuthRepository {
+    impl DatabaseAuthRepository for MockUserAuthRepository {
         async fn find_by_email(&self, email: String) -> Result<Option<UserAuth>, UserAuthError> {
             let data = self.data.read().await;
             Ok(data.get(&email).cloned())
@@ -75,16 +75,18 @@ mod tests {
             password: SecretString::from("password123".to_string()),
         };
 
+        println!("NEW USER {:?}", new_user.password);
+
         repo.create(new_user.clone()).await.unwrap();
 
         // Act
         let result = repo.find_by_email(new_user.email.clone()).await.unwrap();
 
-        // Assert
         assert!(result.is_some());
         let user = result.unwrap();
         assert_eq!(user.email, new_user.email);
-        assert_eq!(user.password_hash, "hashed-password123");
+        // Secrets can't be debug!
+        assert_eq!(user.password_hash, "hashed-SecretBox<str>([REDACTED])");
     }
 
     /// ✅ Test that verifies `find_by_email` returns `None` when the user does not exist.

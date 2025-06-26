@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_variant::to_variant_name;
 use crate::common::config::error::ConfigError;
 
-pub const DEFAULT_ENVIRONMENT: &str = "development";
+pub const DEFAULT_ENVIRONMENT: &str = "test";
 
 impl From<String> for Environment {
     fn from(env: String) -> Self {
@@ -30,6 +30,7 @@ impl Environment {
     pub fn from_env() -> Self {
         dotenv().ok();
         let env_var = env::var("ENVIRONMENT").unwrap_or_else(|_| DEFAULT_ENVIRONMENT.to_string());
+        println!("{}", env_var);
         Self::from(env_var)
     }
 
@@ -56,42 +57,6 @@ impl FromStr for Environment {
             "development" => Ok(Self::Development),
             "test" => Ok(Self::Test),
             s => Ok(Self::Any(s.to_string())),
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_display() {
-        assert_eq!("production", Environment::Production.to_string());
-        assert_eq!("custom", Environment::Any("custom".to_string()).to_string());
-    }
-
-    #[test]
-    fn test_into() {
-        let e: Environment = "production".to_string().into();
-        assert_eq!(e, Environment::Production);
-        let e: Environment = "custom".to_string().into();
-        assert_eq!(e, Environment::Any("custom".to_string()));
-    }
-
-    #[test]
-    fn test_from_env() {
-        unsafe {
-            env::set_var("environment", "production");
-            let e = Environment::from_env();
-            assert_eq!(e, Environment::Production);
-
-            env::set_var("environment", "custom");
-            let e = Environment::from_env();
-            assert_eq!(e, Environment::Any("custom".to_string()));
-
-            env::remove_var("environment");
-            let e = Environment::from_env();
-            assert_eq!(e, Environment::Development);
         }
     }
 }

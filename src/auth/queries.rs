@@ -3,14 +3,14 @@ use async_trait::async_trait;
 use sqlx::{Pool, Postgres};
 use crate::auth::domain::error::UserAuthError;
 use crate::auth::domain::model::{UserAuth, UserNewComer};
-use crate::auth::domain::repository::UserAuthRepository;
+use crate::auth::domain::repository::DatabaseAuthRepository;
 
-pub struct UserAuthRepo{
+pub struct AuthStorage{
     db: Arc<Pool<Postgres>>,
 }
 
 #[async_trait]
-impl UserAuthRepository for UserAuthRepo {
+impl DatabaseAuthRepository for AuthStorage {
     async fn find_by_email(&self, email: String) -> Result<Option<UserAuth>, UserAuthError> {
         todo!()
     }
