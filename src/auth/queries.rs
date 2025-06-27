@@ -1,29 +1,21 @@
 use crate::auth::domain::error::AuthError;
 use crate::auth::domain::model::{UserAuth, UserNewComer};
-use crate::auth::domain::repository::{AuthStorage, DatabaseAuthRepository};
+use crate::auth::domain::repository::AuthStorage;
 use async_trait::async_trait;
 use secrecy::ExposeSecret;
 use sqlx::{Pool, Postgres, Transaction};
-use std::sync::Arc;
 use uuid::Uuid;
 
-pub struct DatabaseAuthRepository {
-    db: Arc<Pool<Postgres>>,
-}
-
-impl DatabaseAuthRepository {
-    pub fn new(db: Arc<Pool<Postgres>>) -> DatabaseAuthRepository {
-        Self { db }
-    }
-}
+#[derive(Default)]
+pub struct DatabaseAuthRepository;
 
 #[async_trait]
 impl AuthStorage for DatabaseAuthRepository {
     async fn find_by_email(
         &self,
+        tx: &mut Transaction<'_, Postgres>,
         email: String,
     ) -> Result<UserAuth, AuthError> {
-        let db = self.db.clone();
         let row = sqlx::query_as!(
             UserAuth,
             r#"
@@ -33,30 +25,30 @@ impl AuthStorage for DatabaseAuthRepository {
             "#,
             email
         )
-        .fetch_optional(&*db)
+        .fetch_one(tx)
         .await?;
 
-        row.ok_or(AuthError::UserNotFound)
+        Ok(row)
     }
 
     async fn create(
         &self,
+        tx: &mut Transaction<'_, Postgres>,
         user_auth: UserAuth,
     ) -> Result<Uuid, AuthError> {
-        let db = self.db.clone();
         let result = sqlx::query!(
             r#"
-        INSERT INTO auth (pid, email, password_hash, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING pid
-        "#,
+            INSERT INTO auth (pid, email, password_hash, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING pid
+            "#,
             user_auth.id,
             user_auth.email,
             user_auth.password_hash.expose_secret(),
             user_auth.created_at.convert_to_offset(),
             user_auth.updated_at.convert_to_offset()
         )
-        .fetch_one(&*db)
+        .fetch_one(tx)
         .await?;
 
         Ok(result.pid)

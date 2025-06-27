@@ -1,4 +1,4 @@
-use crate::auth::domain::model::{UserAuth, UserNewComer};
+use crate::auth::domain::model::{Plain, UserAuth, UserNewComer};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use secrecy::SecretString;
@@ -34,12 +34,9 @@ pub struct UserRegisterRequest {
     pub password: String,
 }
 
-impl From<UserRegisterRequest> for UserNewComer {
+impl From<UserRegisterRequest> for UserNewComer<Plain> {
     fn from(request: UserRegisterRequest) -> Self {
-        Self {
-            email: request.email,
-            password: SecretString::from(request.password),
-        }
+        Self::new(request.email, request.password)
     }
 }
 

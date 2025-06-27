@@ -38,7 +38,7 @@ where
         let mut tx = self.pool.begin().await?;
         let user_auth: UserAuth = hashed_user.into();
 
-        match self.repo.create(user_auth).await {
+        match self.repo.create(&mut tx, user_auth).await {
             Ok(()) => {
                 tx.commit().await?;
                 Ok(())
@@ -49,6 +49,5 @@ where
                 Err(err)
             }
         }
-
     }
 }

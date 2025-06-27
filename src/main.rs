@@ -6,6 +6,7 @@ use crate::common::config::logger;
 mod common;
 mod auth;
 mod user;
+mod app;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
