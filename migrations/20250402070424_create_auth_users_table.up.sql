@@ -1,7 +1,8 @@
 -- Add up migration script here
 CREATE TABLE "auth"
 (
-    id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    pid            UUID UNIQUE NOT NULL DEFAULT uuid_generate_v4(),
     email         TEXT UNIQUE NOT NULL,
     password_hash TEXT        NOT NULL,
     refresh_token TEXT,

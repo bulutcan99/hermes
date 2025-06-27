@@ -1,7 +1,20 @@
 use thiserror::Error;
 
-#[derive(Error, Debug)]
-pub enum UserAuthError {
-    #[error("Failed to read db: {0}")]
-    DbReadError(String),
+#[derive(Debug, Error)]
+pub enum AuthError {
+
+    #[error("Hash error: {0}")]
+    HashError(#[from] argon2::Error),
+
+    #[error("Invalid credentials")]
+    InvalidCredentials,
+
+    #[error("User ID not found in auth table")]
+    UserNotFound,
+
+    #[error("Email already exists")]
+    EmailExists,
+
+    #[error("Database error: {0}")]
+    DbError(#[from] sqlx::Error),
 }

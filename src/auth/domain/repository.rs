@@ -1,106 +1,84 @@
-use async_trait::async_trait;
-use crate::auth::domain::error::UserAuthError;
+use crate::auth::domain::error::AuthError;
 use crate::auth::domain::model::{UserAuth, UserNewComer};
-
+use async_trait::async_trait;
+use sqlx::{Postgres, Transaction};
+use uuid::Uuid;
 
 #[async_trait]
-pub trait DatabaseAuthRepository {
-    /// Finds a user by email.
-    ///
-    /// # Arguments
-    ///
-    /// * `email` - The email address of the user to search for.
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(Some(UserAuth))` if a user is found.
-    /// * `Ok(None)` if no user is found.
-    /// * `Err(UserAuthError)` if an error occurs (e.g., database error).
-    async fn find_by_email(&self, email: String) -> Result<Option<UserAuth>, UserAuthError>;
+pub trait AuthStorage: Send + Sync + 'static {
+    async fn find_by_email(&self, email: String) -> Result<UserAuth, AuthError>;
 
-    /// Creates a new user authentication record.
-    ///
-    /// # Arguments
-    ///
-    /// * `user_auth` - The data of the new user to create.
-    ///
-    /// # Returns
-    ///
-    /// * `Ok(())` if the user is created successfully.
-    /// * `Err(UserAuthError)` if an error occurs.
-    async fn create(&self, user_auth: UserNewComer) -> Result<(), UserAuthError>;
+    async fn create(&self, auth: UserAuth) -> Result<Uuid, AuthError>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::common::data::hash;
+    use async_trait::async_trait;
+    use secrecy::ExposeSecret;
     use std::collections::HashMap;
-    use tokio::sync::RwLock;
     use std::sync::Arc;
-    use secrecy::SecretString;
+    use tokio::sync::RwLock;
 
-    /// A simple in-memory implementation of `DatabaseAuthRepository` for testing purposes.
-    struct MockUserAuthRepository {
+    pub struct MockAuthRepository {
         data: Arc<RwLock<HashMap<String, UserAuth>>>,
     }
 
+    impl MockAuthRepository {
+        pub fn new() -> Self {
+            Self {
+                data: Arc::new(RwLock::new(HashMap::new())),
+            }
+        }
+    }
+
     #[async_trait]
-    impl DatabaseAuthRepository for MockUserAuthRepository {
-        async fn find_by_email(&self, email: String) -> Result<Option<UserAuth>, UserAuthError> {
+    impl AuthStorage for MockAuthRepository {
+        async fn find_by_email(&self, email: String) -> Result<UserAuth, AuthError> {
             let data = self.data.read().await;
-            Ok(data.get(&email).cloned())
+            data.get(&email).cloned().ok_or(AuthError::UserNotFound)
         }
 
-        async fn create(&self, user_auth: UserNewComer) -> Result<(), UserAuthError> {
+        async fn create(&self, user_auth: UserAuth) -> Result<(), AuthError> {
             let mut data = self.data.write().await;
-            data.insert(user_auth.email.clone(), UserAuth {
-                email: user_auth.email,
-                password_hash: format!("hashed-{:?}", user_auth.password),
-                refresh_token: None,
-            });
+            data.insert(user_auth.email.clone(), user_auth);
             Ok(())
         }
     }
 
-    /// ✅ Test that verifies a user can be found by email after being created.
     #[tokio::test]
     async fn find_user_by_email_should_return_user_when_exists() {
-        // Arrange
-        let repo = MockUserAuthRepository {
-            data: Arc::new(RwLock::new(HashMap::new())),
-        };
+        let repo = MockAuthRepository::new();
 
-        let new_user = UserNewComer {
-            email: "test@example.com".to_string(),
-            password: SecretString::from("password123".to_string()),
-        };
+        let email = "test@example.com".to_string();
+        let plain_password = "Password123!".to_string();
+        let hashed_password = hash::hash_password(plain_password.as_str()).unwrap();
 
-        println!("NEW USER {:?}", new_user.password);
+        let new_user = UserNewComer::new(email.clone(), hashed_password);
+        let auth_user: UserAuth = new_user.into();
 
-        repo.create(new_user.clone()).await.unwrap();
+        repo.create(auth_user).await.unwrap();
 
         // Act
-        let result = repo.find_by_email(new_user.email.clone()).await.unwrap();
-
-        assert!(result.is_some());
-        let user = result.unwrap();
-        assert_eq!(user.email, new_user.email);
-        // Secrets can't be debug!
-        assert_eq!(user.password_hash, "hashed-SecretBox<str>([REDACTED])");
-    }
-
-    /// ✅ Test that verifies `find_by_email` returns `None` when the user does not exist.
-    #[tokio::test]
-    async fn find_user_by_email_should_return_none_when_not_exists() {
-        // Arrange
-        let repo = MockUserAuthRepository {
-            data: Arc::new(RwLock::new(HashMap::new())),
-        };
-
-        // Act
-        let result = repo.find_by_email("notfound@example.com".to_string()).await.unwrap();
+        let result = repo.find_by_email(email.clone()).await;
 
         // Assert
-        assert!(result.is_none());
+        assert!(result.is_ok());
+        let user = result.unwrap();
+        assert_eq!(user.email, email);
+        assert!(
+            !user.password_hash.expose_secret().is_empty(),
+            "Password hash should not be empty"
+        );
+    }
+
+    #[tokio::test]
+    async fn find_user_by_email_should_return_err_when_not_exists() {
+        let repo = MockAuthRepository::new();
+
+        let result = repo.find_by_email("notfound@example.com".to_string()).await;
+
+        assert!(result.is_err());
     }
 }

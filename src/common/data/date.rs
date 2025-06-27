@@ -1,28 +1,70 @@
-use thiserror::Error;
-use time::format_description::well_known::Rfc3339;
-use time::{Duration, OffsetDateTime};
+use std::ops::Add;
 
-pub type Result<T> = core::result::Result<T, DateError>;
+use anyhow::{anyhow, Error};
+use chrono::{DateTime, Duration, Local, NaiveDateTime, Utc};
+use serde::{Deserialize, Serialize};
+use sqlx::types::time::OffsetDateTime;
+use tower_cookies::cookie::time::format_description::well_known::Rfc3339;
 
-#[derive(Error, Debug)]
-pub enum DateError {
-    #[error("Failed to parse! Date: {0}")]
-    FailToDateParse(String),
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+pub struct Timestamp {
+    pub datetime: DateTime<Utc>,
 }
 
-pub fn now_utc() -> OffsetDateTime {
-    OffsetDateTime::now_utc()
+impl From<OffsetDateTime> for Timestamp {
+    fn from(odt: OffsetDateTime) -> Self {
+        let dt = Utc::now();
+        let naive_utc = dt.naive_utc();
+        let offset = dt.offset().clone();
+        let dt_new = DateTime::<Utc>::from_naive_utc_and_offset(naive_utc, offset);
+        Self { datetime: dt_new }
+    }
 }
 
-pub fn format_time(time: OffsetDateTime) -> String {
-    time.format(&Rfc3339).unwrap() // TODO: need to check if safe.
+impl Add<u64> for Timestamp {
+    type Output = Self;
+
+    fn add(self, rhs: u64) -> Self::Output {
+        let duration = Duration::milliseconds(rhs as i64);
+        let new_datetime = self.datetime + duration;
+        Timestamp::new(new_datetime)
+    }
 }
 
-pub fn now_utc_plus_sec_str(sec: &u64) -> String {
-    let new_time = now_utc() + Duration::seconds(*sec as i64);
-    format_time(new_time)
+impl Timestamp {
+    pub fn new(datetime: DateTime<Utc>) -> Self {
+        Self { datetime }
+    }
+
+    pub fn now_utc() -> Self {
+        Self {
+            datetime: Utc::now(),
+        }
+    }
+
+    pub fn to_local(&self) -> DateTime<Local> {
+        self.datetime.with_timezone(&Local)
+    }
+
+    pub fn to_naive(&self) -> NaiveDateTime {
+        self.datetime.naive_utc()
+    }
+
+    pub fn convert_to_offset(&self) -> OffsetDateTime {
+        OffsetDateTime::from_unix_timestamp(self.datetime.timestamp()).unwrap()
+    }
+
+    pub fn get_expire_time(&self, expire: u64) -> u64 {
+        let current_time = Timestamp::now_utc();
+        let expire_time = current_time + expire;
+        expire_time.datetime.timestamp() as u64
+    }
+
+    pub fn to_unix_timestamp(&self) -> u64 {
+        self.datetime.timestamp() as u64
+    }
 }
 
-pub fn parse_utc(moment: &str) -> Result<OffsetDateTime> {
-    OffsetDateTime::parse(moment, &Rfc3339).map_err(|_| DateError::FailToDateParse(moment.to_string()))
+pub fn parse_utc(moment: &str) -> Result<OffsetDateTime, Error> {
+    OffsetDateTime::parse(moment, &Rfc3339).map_err(|_| anyhow!("Error while parsing date-time!"))
 }
