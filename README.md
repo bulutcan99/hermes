@@ -86,34 +86,47 @@ hermes/
 
 ---
 
-## 📅 Roadmap (Simplified)
+📅 Roadmap 
 
-**Week 1-2**
+We will follow a sprint-based development approach. Each sprint is 2 weeks long, starting from October 6, 2025, with the first sprint ending on October 19, 2025. The tasks have been reordered to first build the simulation service (data generator) and then develop the UDP Ingestor (listener).
 
-* Setup project structure & workspace.
-* Implement `common` crate (models, errors, DTOs).
-* Build `udp-ingestor` → receives & publishes location updates.
 
-**Week 3-4**
 
-* Implement `location-processor` with PostgreSQL/Redis.
-* Add `auth-service` for user registration/login.
+🎯 Sprint 1 Goal: Establish foundation & data simulation (Oct 6 – Oct 19, 2025)
+Setup project structure & workspace.
+Implement common crate (models, errors, DTOs).
+Develop simulation crate for test data (simulated drivers broadcasting locations).
 
-**Week 5**
 
-* Develop `simulation` crate for test data.
-* Ensure UDP ingestion works with simulated drivers.
+🎯 Sprint 2 Goal: Location ingestion (Oct 20 – Nov 2, 2025)
+Implement udp-ingestor service to receive data from simulation.
+Validate integration between simulation → udp-ingestor.
+Publish ingested data to message bus (NATS).
 
-**Week 6**
 
-* Create `gateway` for unified external API.
-* Integrate services through NATS & Redis.
+🎯 Sprint 3 Goal: Location processing (Nov 3 – Nov 16, 2025)
+Implement location-processor service.
+Parse location updates and calculate routes.
+Store location history in PostgreSQL.
+Cache latest driver states in Redis.
 
-**Week 7+**
 
-* Perform end-to-end testing with ride data simulation.
-* Add observability (metrics, tracing).
-* Optimize system for scaling.
+🎯 Sprint 4 Goal: Authentication & user management (Nov 17 – Nov 30, 2025)
+Implement auth-service (user registration & login).
+Add JWT-based authentication.
+Integrate with PostgreSQL for user storage.
+
+
+🎯 Sprint 5 Goal: Unified external API (Dec 1 – Dec 7, 2025)
+Implement gateway (Axum-based API gateway).
+Connect gateway routes to auth & location services.
+Expose minimal external API for testing.
+
+🎯 Sprint 6+ Goal: Integration & improvements (Dec 8, 2025 onward)
+Perform end-to-end testing with simulation → UDP → processor → gateway.
+Add observability (metrics, tracing, structured logs).
+Optimize Redis/Postgres queries.
+Prepare for future services (matcher, ride-service, notifications).
 
 ---
 
