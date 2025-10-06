@@ -1,5 +1,5 @@
 [package]
-name = "auth-service"
+name = "location-processor"
 version = "0.1.0"
 edition = "2021"
 
@@ -17,4 +17,4 @@ chrono = { workspace = true }
 sqlx = { workspace = true }
 redis = { workspace = true }
 async-nats = { workspace = true }
-common = { path = "../common" }
+common = { path = "../../crates/common" }

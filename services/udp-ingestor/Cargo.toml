@@ -17,4 +17,4 @@ chrono = { workspace = true }
 sqlx = { workspace = true }
 redis = { workspace = true }
 async-nats = { workspace = true }
-common = { path = "../common" }
+common = { path = "../../crates/common" }
