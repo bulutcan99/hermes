@@ -1,4 +1,4 @@
-# Hermes - Ride-Hailing Microservice System 🚕
+# Hermes - Vehicle Tracking Microservice System 🚕
 
 Hermes is a **minimal ride-hailing platform** inspired by Uber. It is designed as a **microservices-based system** written in **Rust**, demonstrating clean architecture, event-driven communication, and distributed system design. The current version focuses on **core services only**, providing the foundation for future extensions.
 
