@@ -1,164 +1,245 @@
-# Hermes - Vehicle Tracking Microservice System 🚕
+# Hermes: GPS Tracking & Processing System
 
-Hermes is a **minimal ride-hailing platform** inspired by Uber. It is designed as a **microservices-based system** written in **Rust**, demonstrating clean architecture, event-driven communication, and distributed system design. The current version focuses on **core services only**, providing the foundation for future extensions.
+A microservice-based GPS tracking and route processing system built with Rust,
+focusing on real-time telemetry ingestion, route extraction, and analytics.
 
----
+## 🎯 Project Goals
 
-## 🎯 Goals & Motivation
+- **Real-time GPS telemetry ingestion** via UDP
+- **Intelligent route extraction** from raw location data
+- **Scalable microservice architecture** with event-driven communication
+- **Production-ready observability** with metrics and tracing
 
-* Build a **production-like distributed system** using Rust.
-* Practice **microservice communication** (via NATS, Redis, gRPC/REST).
-* Learn and apply **design patterns** (Strategy, Observer, etc.) in a real-world simulation.
-* Focus initially on **user management**, **location ingestion**, and **simulation-driven data flows**.
+## 🏗️ Architecture
 
----
+```
+Simulation → UDP:4000 → Ingestor → NATS → Location Processor → PostgreSQL
+                                                ↓
+                                            Gateway API
+```
 
-## 🏗️ Active Services
+### Services
 
-### 1. **Gateway**
+- **UDP Ingestor**: Receives raw telemetry via UDP, validates, publishes to NATS
+- **Location Processor**: Converts telemetry into routes and segments using
+  Strategy pattern
+- **Gateway**: REST API for users, vehicles, and route queries
+- **Simulation**: Test data generator for development
 
-* Unified HTTP API built with **Axum**.
-* Acts as the API gateway for external requests.
-* Forwards calls to internal services.
+### Infrastructure
 
-### 2. **Auth Service**
+- **PostgreSQL 16 + PostGIS**: Geospatial data storage
+- **NATS**: Event streaming and pub/sub
+- **Redis**: Caching and real-time state
+- **Prometheus + Grafana**: Metrics and monitoring
 
-* Handles user registration and authentication (drivers/customers).
-* Issues JWT tokens.
+## 🚀 Quick Start
 
-### 3. **Location Processor**
+### Prerequisites
 
-* Consumes location updates (from UDP Ingestor or Simulation).
-* Processes driver movement history and estimated routes.
-* Persists data in PostgreSQL and caches ephemeral data in Redis.
+- [Rust](https://rustup.rs/) 1.81+
+- [Docker](https://www.docker.com/) & Docker Compose
+- [NATS CLI](https://github.com/nats-io/natscli) (optional, for debugging)
 
-### 4. **UDP Ingestor**
+### 1. Clone and Setup
 
-* Listens for simulated location updates over **UDP**.
-* Parses and publishes them to the message bus (NATS).
+```bash
+git clone https://github.com/yourusername/hermes.git
+cd hermes
+```
 
-### 5. **Simulation Service**
+### 2. Start Infrastructure
 
-* Generates **simulated vehicle and rider data**.
-* Sends periodic location updates over UDP to test the system.
+```bash
+docker-compose up -d postgres redis nats
+```
 
-### 6. **Common Crate**
+Wait for health checks to pass:
 
-* Shared library with **models, DTOs, errors, and utilities**.
-* Reduces code duplication across services.
+```bash
+docker-compose ps
+```
 
----
+### 3. Build Workspace
 
-## 🛠️ Tech Stack
+```bash
+cargo build --workspace
+```
 
-* **Language:** Rust 🦀
-* **Frameworks:**
+### 4. Run Tests
 
-  * [Axum](https://github.com/tokio-rs/axum) (HTTP)
-  * [Tokio](https://tokio.rs/) (Async runtime)
-* **Databases & Messaging:**
+```bash
+cargo test --workspace
+```
 
-  * PostgreSQL (Persistent storage)
-  * Redis (Cache & ephemeral state)
-  * NATS (Event-driven messaging)
-* **Utilities:**
-
-  * `tracing` + `tracing-subscriber` (logging & observability)
-  * `sqlx` (async DB queries)
-  * `serde` (serialization)
-
----
-
-## 📂 Project Structure
+## 📦 Project Structure
 
 ```
 hermes/
- ├── crates/
- │   ├── common/              # Shared utilities, models, errors
- │   ├── udp-ingestor/        # UDP listener for location updates
- │   ├── location-processor/  # Location parsing & route builder
- │   ├── auth-service/        # Auth & user management
- │   ├── gateway/             # API gateway (Axum)
- │   ├── simulation/          # Data generator & sender
- ├── Cargo.toml
- └── README.md
+├── Cargo.toml                 # Workspace configuration
+├── docker-compose.yml         # Infrastructure services
+├── crates/
+│   ├── common/                # Shared utilities and event contracts
+│   ├── udp-ingestor/         # UDP telemetry receiver
+│   ├── location-processor/    # Route extraction service
+│   ├── gateway/               # REST API service
+│   ├── auth-service/          # Authentication module
+│   └── simulation/            # Test data generator
+├── infra/
+│   ├── postgres/              # Database schemas
+│   ├── prometheus/            # Metrics configuration
+│   └── grafana/               # Dashboard configuration
+└── docs/                      # Additional documentation
 ```
 
----
+## 🔧 Development
 
-📅 Roadmap 
+### Run Services Locally
 
-We will follow a sprint-based development approach. Each sprint is 2 weeks long, starting from October 6, 2025, with the first sprint ending on October 19, 2025. The tasks have been reordered to first build the simulation service (data generator) and then develop the UDP Ingestor (listener).
-
-
-
-🎯 Sprint 1 Goal: Establish foundation & data simulation (Oct 6 – Oct 19, 2025)
-Setup project structure & workspace.
-Implement common crate (models, errors, DTOs).
-Develop simulation crate for test data (simulated drivers broadcasting locations).
-
-
-🎯 Sprint 2 Goal: Location ingestion (Oct 20 – Nov 2, 2025)
-Implement udp-ingestor service to receive data from simulation.
-Validate integration between simulation → udp-ingestor.
-Publish ingested data to message bus (NATS).
-
-
-🎯 Sprint 3 Goal: Location processing (Nov 3 – Nov 16, 2025)
-Implement location-processor service.
-Parse location updates and calculate routes.
-Store location history in PostgreSQL.
-Cache latest driver states in Redis.
-
-
-🎯 Sprint 4 Goal: Authentication & user management (Nov 17 – Nov 30, 2025)
-Implement auth-service (user registration & login).
-Add JWT-based authentication.
-Integrate with PostgreSQL for user storage.
-
-
-🎯 Sprint 5 Goal: Unified external API (Dec 1 – Dec 7, 2025)
-Implement gateway (Axum-based API gateway).
-Connect gateway routes to auth & location services.
-Expose minimal external API for testing.
-
-🎯 Sprint 6+ Goal: Integration & improvements (Dec 8, 2025 onward)
-Perform end-to-end testing with simulation → UDP → processor → gateway.
-Add observability (metrics, tracing, structured logs).
-Optimize Redis/Postgres queries.
-Prepare for future services (matcher, ride-service, notifications).
-
----
-
-## 🚀 Running the Project
+Each service can be run independently:
 
 ```bash
-# Clone repo
-git clone https://github.com/bulutcan99/hermes.git
-cd hermes
+# Terminal 1: UDP Ingestor (Sprint 1)
+cd crates/udp-ingestor
+RUST_LOG=info cargo run
 
-# Run services
-cargo run -p udp-ingestor
-cargo run -p location-processor
-cargo run -p auth-service
-cargo run -p gateway
-cargo run -p simulation
+# Terminal 2: Simulator (Sprint 1)
+cd crates/simulation
+NUM_VEHICLES=5 cargo run
+
+# Terminal 3: Location Processor (Sprint 2)
+cd crates/location-processor
+cargo run
+
+# Terminal 4: Gateway (Sprint 3)
+cd crates/gateway
+cargo run
 ```
 
----
+### Monitor NATS Events
 
-## 🔮 Future Improvements
+```bash
+# Subscribe to all telemetry events
+nats sub "telemetry.>"
 
-* Add `matcher` service for nearest-driver assignment.
-* Add `ride-service` for ride lifecycle management.
-* Implement `notification-service` for push/email updates.
-* Deploy on Kubernetes for scaling.
+# Subscribe to route events
+nats sub "route.>"
+```
 
----
+### Database Access
 
-## 🤝 Contribution
+```bash
+# Connect to PostgreSQL
+psql postgres://hermes:hermes_dev@localhost:5432/hermes
 
-Contributions, issues, and feature requests are welcome!
-Please open an issue or PR if you want to improve Hermes.
+# Example queries
+SELECT * FROM vehicles;
+SELECT * FROM routes WHERE status = 'active';
+SELECT * FROM route_segments ORDER BY start_time DESC LIMIT 10;
+```
 
----
+## 🧪 Testing
+
+```bash
+# Run all tests
+cargo test --workspace
+
+# Run tests for specific crate
+cargo test -p common
+cargo test -p udp-ingestor
+
+# Run with output
+cargo test --workspace -- --nocapture
+
+# Run integration tests only
+cargo test --workspace --test '*'
+```
+
+## 📊 Observability
+
+### Prometheus Metrics
+
+Access at: http://localhost:9090
+
+Example queries:
+
+- `up{job="nats"}` - NATS availability
+- `go_memstats_alloc_bytes{job="nats"}` - NATS memory usage
+
+### Grafana Dashboards
+
+Access at: http://localhost:3000 (admin/admin)
+
+Dashboards will be added in Sprint 4.
+
+### NATS Monitoring
+
+Access at: http://localhost:8222
+
+- `/healthz` - Health check
+- `/varz` - General information
+- `/connz` - Connection information
+
+## 🛠️ Configuration
+
+All services use environment variables for configuration:
+
+```bash
+# Database
+DATABASE_URL=postgres://hermes:hermes_dev@localhost:5432/hermes
+
+# NATS
+NATS_URL=nats://localhost:4222
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Logging
+RUST_LOG=info
+```
+
+## 📅 Development Roadmap
+
+- [x] **Sprint 0**: Foundation (workspace, infra, CI)
+- [ ] **Sprint 1**: UDP Ingestion Pipeline
+- [ ] **Sprint 2**: Location Processor
+- [ ] **Sprint 3**: Auth & Gateway API
+- [ ] **Sprint 4**: Observability & Production Readiness
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Code Quality
+
+```bash
+# Format code
+cargo fmt --all
+
+# Run lints
+cargo clippy --all-targets --all-features -- -D warnings
+
+# Check documentation
+cargo doc --workspace --all-features --no-deps
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for
+details.
+
+## 🙏 Acknowledgments
+
+- Inspired by real-world ride-hailing telemetry systems
+- Built with amazing Rust ecosystem tools
+- PostgreSQL + PostGIS for geospatial capabilities
+
+## 📚 Additional Resources
+
+- [DEVELOPMENT.md](docs/DEVELOPMENT.md) - Detailed development guide
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - Architecture deep dive
+- [API.md](docs/API.md) - API documentation

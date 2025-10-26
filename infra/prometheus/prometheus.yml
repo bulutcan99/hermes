@@ -1,0 +1,46 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: "hermes-local"
+    environment: "development"
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # NATS monitoring
+  - job_name: "nats"
+    static_configs:
+      - targets: ["nats:8222"]
+
+  # PostgreSQL exporter (if added)
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+
+  # Redis exporter (if added)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+
+  # Service endpoints (will be added in future sprints)
+  # - job_name: 'udp-ingestor'
+  #   static_configs:
+  #     - targets: ['udp-ingestor:9091']
+
+  # - job_name: 'location-processor'
+  #   static_configs:
+  #     - targets: ['location-processor:9092']
+
+  # - job_name: 'gateway'
+  #   static_configs:
+  #     - targets: ['gateway:9093']
