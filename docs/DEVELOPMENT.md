@@ -115,7 +115,7 @@ docker-compose logs -f redis
 
 ### 4. Initialize Database
 
-The database schema is automatically initialized via `init.sql`, but you can
+The database schema is automatically initialized via `migrations.sql`, but you can
 manually verify:
 
 ```bash

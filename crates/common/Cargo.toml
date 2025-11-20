@@ -2,17 +2,40 @@
 name = "common"
 version.workspace = true
 edition.workspace = true
+authors.workspace = true
+license.workspace = true
 
 [dependencies]
+# Async runtime
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
-chrono = { workspace = true }
-thiserror = { workspace = true }
-uuid = { workspace = true }
-sqlx = { workspace = true, optional = true }
-redis = { workspace = true, optional = true }
 
-[features]
-default = []
-db = ["sqlx"]
-cache = ["redis"]
+# Database
+sqlx = { workspace = true }
+
+
+# Cache
+redis = { workspace = true }
+
+# Event bus
+async-nats = { workspace = true }
+
+# Utilities
+uuid = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Observability
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+mockall = { workspace = true }
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true }
+tokio = { workspace = true, features = ["test-util"] }

@@ -1,6 +1,4 @@
+pub mod errors;
 pub mod config;
-pub mod error;
-pub mod events;
-pub mod utils;
-
-pub use crate::error::{Error, Result};
+pub mod models;
+mod db;
