@@ -1,4 +1,4 @@
-# Discord Clone - Real-time Communication Platform
+# Hermes - Real-time Communication Platform
 
 A production-ready, Discord-like real-time communication platform built with Rust. Features text chat, voice communication, screen sharing, and video streaming using a scalable microservice architecture.
 
