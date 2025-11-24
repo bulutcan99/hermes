@@ -1,36 +1,28 @@
 [package]
-name = "common"
+name = "channel-service"
 version.workspace = true
 edition.workspace = true
 
-[dependencies]
-# Async Runtime
-tokio.workspace = true
+[[bin]]
+name = "channel-service"
+path = "src/main.rs"
 
-# Serialization
+[dependencies]
+common = { path = "../common" }
+tokio.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-
-# Database
 sqlx.workspace = true
 redis.workspace = true
-
-# Message Queue
 async-nats.workspace = true
-
-# UUID & Time
 uuid.workspace = true
 chrono.workspace = true
-
-# Tracing
 tracing.workspace = true
-
-# Error Handling
+tracing-subscriber.workspace = true
 anyhow.workspace = true
 thiserror.workspace = true
-
-# Validation
+dotenvy.workspace = true
 validator.workspace = true
-
-# JWT
-jsonwebtoken.workspace = true

@@ -1,168 +1,103 @@
-.PHONY: help build test clean fmt clippy run-infra stop-infra logs check doc
+.PHONY: help build test clean run-infra run-all fmt lint docker-up docker-down
 
-# Default target
-help:
-	@echo "Hermes Development Commands"
-	@echo "============================"
-	@echo "make build        - Build all crates"
-	@echo "make test         - Run all tests"
-	@echo "make clean        - Clean build artifacts"
-	@echo "make fmt          - Format code"
-	@echo "make clippy       - Run linter"
-	@echo "make check        - Run fmt + clippy + test"
-	@echo "make doc          - Generate documentation"
-	@echo "make run-infra    - Start infrastructure (Postgres, NATS, Redis)"
-	@echo "make stop-infra   - Stop infrastructure"
-	@echo "make logs         - Show infrastructure logs"
-	@echo "make db-shell     - Connect to PostgreSQL"
-	@echo "make nats-sub     - Subscribe to all NATS events"
-	@echo "make coverage     - Generate test coverage report"
+help: ## Show this help message
+	@echo 'Usage: make [target]'
+	@echo ''
+	@echo 'Available targets:'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 
-# Build targets
-build:
-	@echo "Building workspace..."
-	cargo build --workspace
-
-build-release:
-	@echo "Building release..."
+build: ## Build all services
 	cargo build --workspace --release
 
-# Test targets
-test:
-	@echo "Running tests..."
+test: ## Run all tests
 	cargo test --workspace
 
-test-verbose:
-	@echo "Running tests with output..."
+test-verbose: ## Run all tests with output
 	cargo test --workspace -- --nocapture
 
-test-integration:
-	@echo "Running integration tests..."
-	cargo test --workspace --test '*'
+clean: ## Clean build artifacts
+	cargo clean
+	rm -rf target/
 
-# Code quality
-fmt:
-	@echo "Formatting code..."
+fmt: ## Format code
 	cargo fmt --all
 
-fmt-check:
-	@echo "Checking formatting..."
-	cargo fmt --all -- --check
+lint: ## Run clippy lints
+	cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-clippy:
-	@echo "Running clippy..."
-	cargo clippy --all-targets --all-features -- -D warnings
+check: ## Check code without building
+	cargo check --workspace
 
-clippy-fix:
-	@echo "Auto-fixing clippy issues..."
-	cargo clippy --all-targets --all-features --fix
-
-check: fmt-check clippy test
-	@echo "All checks passed!"
-
-# Documentation
-doc:
-	@echo "Generating documentation..."
-	cargo doc --workspace --all-features --no-deps --open
-
-# Infrastructure management
-run-infra:
-	@echo "Starting infrastructure..."
-	docker-compose up -d postgres redis nats
+docker-up: ## Start all infrastructure services
+	docker-compose up -d
 	@echo "Waiting for services to be healthy..."
 	@sleep 5
 	docker-compose ps
 
-stop-infra:
-	@echo "Stopping infrastructure..."
+docker-down: ## Stop all infrastructure services
 	docker-compose down
 
-restart-infra: stop-infra run-infra
+docker-clean: ## Stop and remove all containers, volumes
+	docker-compose down -v
 
-logs:
+run-infra: docker-up ## Alias for docker-up
+
+run-gateway: ## Run gateway service
+	cd crates/gateway-service && cargo run
+
+run-auth: ## Run auth service
+	cd crates/auth-service && cargo run
+
+run-user: ## Run user service
+	cd crates/user-service && cargo run
+
+run-channel: ## Run channel service
+	cd crates/channel-service && cargo run
+
+run-chat: ## Run chat service
+	cd crates/chat-service && cargo run
+
+run-voice: ## Run voice service
+	cd crates/voice-service && cargo run
+
+run-stream: ## Run stream service
+	cd crates/stream-service && cargo run
+
+run-presence: ## Run presence service
+	cd crates/presence-service && cargo run
+
+run-media: ## Run media server
+	cd crates/media-server && cargo run
+
+logs: ## Show docker logs
 	docker-compose logs -f
 
-logs-postgres:
+logs-postgres: ## Show postgres logs
 	docker-compose logs -f postgres
 
-logs-nats:
-	docker-compose logs -f nats
-
-logs-redis:
+logs-redis: ## Show redis logs
 	docker-compose logs -f redis
 
-# Database operations
-db-shell:
-	psql postgres://hermes:hermes_dev@localhost:5432/hermes
+logs-nats: ## Show nats logs
+	docker-compose logs -f nats
 
-db-reset:
-	@echo "Resetting database..."
-	docker-compose down -v postgres
-	docker-compose up -d postgres
-	@sleep 5
-	@echo "Database reset complete"
+db-shell: ## Open PostgreSQL shell
+	docker-compose exec postgres psql -U discord -d discord
 
-# NATS operations
-nats-sub:
-	nats sub ">"
+redis-cli: ## Open Redis CLI
+	docker-compose exec redis redis-cli -a redis_dev_password
 
-nats-sub-telemetry:
-	nats sub "telemetry.>"
+nats-status: ## Check NATS status
+	curl http://localhost:8222/varz
 
-nats-sub-routes:
-	nats sub "route.>"
-
-nats-info:
-	curl -s http://localhost:8222/varz | jq
-
-# Monitoring
-prometheus:
-	@echo "Opening Prometheus..."
-	@open http://localhost:9090 || xdg-open http://localhost:9090
-
-grafana:
-	@echo "Opening Grafana..."
-	@open http://localhost:3000 || xdg-open http://localhost:3000
-
-nats-monitor:
-	@echo "Opening NATS Monitor..."
-	@open http://localhost:8222 || xdg-open http://localhost:8222
-
-# Development utilities
-clean:
-	@echo "Cleaning build artifacts..."
-	cargo clean
-	rm -f flamegraph.svg
-	rm -f perf.data*
-
-coverage:
-	@echo "Generating coverage report..."
-	cargo tarpaulin --workspace --out Html
-	@echo "Opening coverage report..."
-	@open tarpaulin-report.html || xdg-open tarpaulin-report.html
-
-watch:
-	@echo "Running with auto-reload..."
-	cargo watch -x "run --bin udp-ingestor"
-
-# Install development tools
-install-tools:
-	@echo "Installing development tools..."
-	cargo install cargo-watch
-	cargo install cargo-tarpaulin
-	cargo install flamegraph
-	cargo install cargo-audit
-	cargo install sqlx-cli --no-default-features --features postgres
-
-# Security
-audit:
-	@echo "Running security audit..."
-	cargo audit
-
-# Quick start for new developers
-setup: install-tools run-infra build
+setup: docker-up ## Initial setup
+	@echo "Creating .env file from .env.example..."
+	@cp -n .env.example .env || true
 	@echo ""
-	@echo "Setup complete! You can now run:"
-	@echo "  make test      - Run tests"
-	@echo "  make check     - Run all checks"
-	@echo "  make help      - See all commands"
+	@echo "Setup complete! Edit .env file if needed."
+	@echo "Run 'make build' to build all services."
+
+dev-all: ## Run all services (requires tmux or separate terminals)
+	@echo "Starting all services..."
+	@echo "This requires tmux or you should run each service in separate terminal"
+	@echo "Run: make run-gateway, make run-auth, etc. in different terminals"

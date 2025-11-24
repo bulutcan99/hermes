@@ -1,115 +1,132 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  # PostgreSQL with PostGIS extension
+  # PostgreSQL Database
   postgres:
-    image: postgis/postgis:16-3.4
-    container_name: hermes-postgres
+    image: postgres:16-alpine
+    container_name: discord-postgres
     environment:
-      POSTGRES_USER: hermes
-      POSTGRES_PASSWORD: hermes_dev
-      POSTGRES_DB: hermes
+      POSTGRES_USER: discord
+      POSTGRES_PASSWORD: discord_dev_password
+      POSTGRES_DB: discord
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infra/postgres/migrations.sql:/docker-entrypoint-initdb.d/migrations.sql
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hermes"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U discord"]
+      interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - hermes-network
+      - discord-network
 
-  # Redis for caching and real-time state
+  # Redis Cache & Pub/Sub
   redis:
     image: redis:7-alpine
-    container_name: hermes-redis
+    container_name: discord-redis
+    command: redis-server --appendonly yes --requirepass redis_dev_password
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
+      test: ["CMD", "redis-cli", "-a", "redis_dev_password", "ping"]
+      interval: 10s
+      timeout: 5s
       retries: 5
     networks:
-      - hermes-network
+      - discord-network
 
-  # NATS for event streaming
+  # NATS Message Broker
   nats:
     image: nats:2.10-alpine
-    container_name: hermes-nats
+    container_name: discord-nats
+    command: "-js -m 8222"
     ports:
-      - "4222:4222" # Client connections
-      - "8222:8222" # HTTP monitoring
-      - "6222:6222" # Cluster connections
-    command:
-      - "-js" # Enable JetStream
-      - "-m" # Enable monitoring
-      - "8222" # Monitoring port
-      - "--store_dir=/data" # Persistence directory
-      - "--max_memory_store=1GB" # Max memory for streams
-      - "--max_file_store=10GB" # Max file storage
+      - "4222:4222"  # Client connections
+      - "8222:8222"  # HTTP monitoring
     volumes:
       - nats_data:/data
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8222/healthz"]
-      interval: 5s
-      timeout: 3s
+      interval: 10s
+      timeout: 5s
       retries: 5
     networks:
-      - hermes-network
+      - discord-network
 
-  # Prometheus for metrics collection
+  # MinIO Object Storage (for file uploads)
+  minio:
+    image: minio/minio:latest
+    container_name: discord-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: discord_minio
+      MINIO_ROOT_PASSWORD: discord_minio_password
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - discord-network
+
+  # Coturn TURN/STUN Server (for WebRTC NAT traversal)
+  coturn:
+    image: coturn/coturn:latest
+    container_name: discord-coturn
+    network_mode: "host"
+    volumes:
+      - ./infra/coturn/turnserver.conf:/etc/coturn/turnserver.conf
+    command: -c /etc/coturn/turnserver.conf
+
+  # Prometheus Metrics
   prometheus:
     image: prom/prometheus:latest
-    container_name: hermes-prometheus
+    container_name: discord-prometheus
     ports:
       - "9090:9090"
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
-      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
     networks:
-      - hermes-network
-    depends_on:
-      - postgres
-      - redis
-      - nats
+      - discord-network
 
-  # Grafana for visualization
+  # Grafana Dashboard
   grafana:
     image: grafana/grafana:latest
-    container_name: hermes-grafana
+    container_name: discord-grafana
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
     volumes:
       - grafana_data:/var/lib/grafana
       - ./infra/grafana/provisioning:/etc/grafana/provisioning
-    networks:
-      - hermes-network
     depends_on:
       - prometheus
-
-networks:
-  hermes-network:
-    driver: bridge
+    networks:
+      - discord-network
 
 volumes:
   postgres_data:
   redis_data:
   nats_data:
+  minio_data:
   prometheus_data:
   grafana_data:
+
+networks:
+  discord-network:
+    driver: bridge

@@ -1,142 +1,274 @@
-# Hermes: GPS Tracking & Processing System
+# Discord Clone - Real-time Communication Platform
 
-A microservice-based GPS tracking and route processing system built with Rust,
-focusing on real-time telemetry ingestion, route extraction, and analytics.
+A production-ready, Discord-like real-time communication platform built with Rust. Features text chat, voice communication, screen sharing, and video streaming using a scalable microservice architecture.
 
-## 🎯 Project Goals
+## 🎯 Features
 
-- **Real-time GPS telemetry ingestion** via UDP
-- **Intelligent route extraction** from raw location data
-- **Scalable microservice architecture** with event-driven communication
-- **Production-ready observability** with metrics and tracing
+- **Text Messaging**: Real-time text chat in channels and direct messages
+- **Voice Communication**: WebRTC-based voice channels with high-quality audio
+- **Screen Sharing**: Share your screen with other users in real-time
+- **Video Streaming**: Live video streaming capabilities
+- **Server/Channel Management**: Create servers, channels, and manage permissions
+- **User Presence**: Real-time online/offline/away status tracking
+- **Friend System**: Add friends, accept requests, and manage relationships
+- **Rich Media**: Share files, images, and attachments
+- **Webhooks**: Integration support for external services
 
 ## 🏗️ Architecture
 
-```
-Simulation → UDP:4000 → Ingestor → NATS → Location Processor → PostgreSQL
-                                                ↓
-                                            Gateway API
-```
+### Microservices
 
-### Services
-
-- **UDP Ingestor**: Receives raw telemetry via UDP, validates, publishes to NATS
-- **Location Processor**: Converts telemetry into routes and segments using
-  Strategy pattern
-- **Gateway**: REST API for users, vehicles, and route queries
-- **Simulation**: Test data generator for development
+```
+┌─────────────────┐     ┌──────────────────┐
+│  Gateway Service │────▶│  Auth Service    │
+│  (WebSocket/HTTP)│     │  (JWT Auth)      │
+└─────────────────┘     └──────────────────┘
+         │
+         ├──────────────┐
+         ▼              ▼
+┌─────────────────┐  ┌──────────────────┐
+│  Chat Service   │  │  User Service    │
+│  (Messaging)    │  │  (Profiles)      │
+└─────────────────┘  └──────────────────┘
+         │              │
+         ▼              ▼
+┌─────────────────┐  ┌──────────────────┐
+│ Channel Service │  │ Presence Service │
+│ (Rooms/Servers) │  │ (Online Status)  │
+└─────────────────┘  └──────────────────┘
+         │              │
+         ▼              ▼
+┌─────────────────┐  ┌──────────────────┐
+│ Voice Service   │  │ Stream Service   │
+│ (WebRTC Voice)  │  │ (Screen Share)   │
+└─────────────────┘  └──────────────────┘
+         │              │
+         └──────┬───────┘
+                ▼
+        ┌──────────────────┐
+        │  Media Server    │
+        │  (Media Routing) │
+        └──────────────────┘
+```
 
 ### Infrastructure
 
-- **PostgreSQL 16 + PostGIS**: Geospatial data storage
-- **NATS**: Event streaming and pub/sub
-- **Redis**: Caching and real-time state
+- **PostgreSQL 16**: Primary database for users, messages, channels
+- **Redis**: Caching, pub/sub, presence tracking, rate limiting
+- **NATS**: Event streaming and inter-service communication
+- **MinIO**: Object storage for file uploads and media
+- **Coturn**: TURN/STUN server for WebRTC NAT traversal
 - **Prometheus + Grafana**: Metrics and monitoring
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- [Rust](https://rustup.rs/) 1.81+
-- [Docker](https://www.docker.com/) & Docker Compose
-- [NATS CLI](https://github.com/nats-io/natscli) (optional, for debugging)
-
-### 1. Clone and Setup
-
-```bash
-git clone https://github.com/yourusername/hermes.git
-cd hermes
-```
-
-### 2. Start Infrastructure
-
-```bash
-docker-compose up -d postgres redis nats
-```
-
-Wait for health checks to pass:
-
-```bash
-docker-compose ps
-```
-
-### 3. Build Workspace
-
-```bash
-cargo build --workspace
-```
-
-### 4. Run Tests
-
-```bash
-cargo test --workspace
-```
-
-## 📦 Project Structure
+## 📁 Project Structure
 
 ```
-hermes/
+discord-clone/
 ├── Cargo.toml                 # Workspace configuration
 ├── docker-compose.yml         # Infrastructure services
 ├── crates/
-│   ├── common/                # Shared utilities and event contracts
-│   ├── udp-ingestor/         # UDP telemetry receiver
-│   ├── location-processor/    # Route extraction service
-│   ├── gateway/               # REST API service
-│   ├── auth-service/          # Authentication module
-│   └── simulation/            # Test data generator
+│   ├── common/               # Shared utilities, models, events
+│   ├── auth-service/         # Authentication & JWT
+│   ├── user-service/         # User profiles & friends
+│   ├── channel-service/      # Servers, channels, permissions
+│   ├── chat-service/         # Text messaging
+│   ├── voice-service/        # Voice communication (WebRTC signaling)
+│   ├── stream-service/       # Screen sharing & video streaming
+│   ├── presence-service/     # Online/offline status
+│   ├── gateway-service/      # WebSocket gateway & REST API
+│   └── media-server/         # Media routing & processing
 ├── infra/
-│   ├── postgres/              # Database schemas
-│   ├── prometheus/            # Metrics configuration
-│   └── grafana/               # Dashboard configuration
-└── docs/                      # Additional documentation
+│   ├── postgres/            # Database schemas & migrations
+│   ├── coturn/              # TURN server configuration
+│   ├── prometheus/          # Metrics configuration
+│   └── grafana/             # Dashboard provisioning
+└── docs/                    # Additional documentation
 ```
 
-## 🔧 Development
+## 🚀 Getting Started
 
-### Run Services Locally
+### Prerequisites
+
+- Rust 1.75+ (stable)
+- Docker & Docker Compose
+- PostgreSQL 16
+- Redis 7
+- NATS 2.10
+
+### Infrastructure Setup
+
+```bash
+# Start all infrastructure services
+docker-compose up -d
+
+# Wait for services to be healthy
+docker-compose ps
+
+# Check service logs
+docker-compose logs -f postgres redis nats
+```
+
+### Building the Project
+
+```bash
+# Build all services
+cargo build --workspace --release
+
+# Run tests
+cargo test --workspace
+
+# Check formatting
+cargo fmt --all --check
+
+# Run lints
+cargo clippy --workspace --all-targets
+```
+
+### Running Services
 
 Each service can be run independently:
 
 ```bash
-# Terminal 1: UDP Ingestor (Sprint 1)
-cd crates/udp-ingestor
+# Terminal 1: Gateway Service (API & WebSocket)
+cd crates/gateway-service
 RUST_LOG=info cargo run
 
-# Terminal 2: Simulator (Sprint 1)
-cd crates/simulation
-NUM_VEHICLES=5 cargo run
-
-# Terminal 3: Location Processor (Sprint 2)
-cd crates/location-processor
+# Terminal 2: Auth Service
+cd crates/auth-service
 cargo run
 
-# Terminal 4: Gateway (Sprint 3)
-cd crates/gateway
+# Terminal 3: Chat Service
+cd crates/chat-service
+cargo run
+
+# Terminal 4: Voice Service
+cd crates/voice-service
+cargo run
+
+# Terminal 5: Stream Service
+cd crates/stream-service
+cargo run
+
+# Terminal 6: User Service
+cd crates/user-service
+cargo run
+
+# Terminal 7: Channel Service
+cd crates/channel-service
+cargo run
+
+# Terminal 8: Presence Service
+cd crates/presence-service
+cargo run
+
+# Terminal 9: Media Server
+cd crates/media-server
 cargo run
 ```
 
-### Monitor NATS Events
+## 🔧 Configuration
+
+All services use environment variables for configuration:
 
 ```bash
-# Subscribe to all telemetry events
-nats sub "telemetry.>"
+# Database
+DATABASE_URL=postgres://discord:discord_dev_password@localhost:5432/discord
 
-# Subscribe to route events
-nats sub "route.>"
+# Redis
+REDIS_URL=redis://:redis_dev_password@localhost:6379
+
+# NATS
+NATS_URL=nats://localhost:4222
+
+# MinIO (Object Storage)
+MINIO_ENDPOINT=localhost:9000
+MINIO_ACCESS_KEY=discord_minio
+MINIO_SECRET_KEY=discord_minio_password
+
+# JWT Secret
+JWT_SECRET=your-secret-key-change-in-production
+
+# TURN Server
+TURN_URL=turn:localhost:3478
+TURN_USERNAME=discord
+TURN_PASSWORD=discord_turn_password
+
+# Logging
+RUST_LOG=info
 ```
 
-### Database Access
+Create a `.env` file in each service directory or export these variables.
 
-```bash
-# Connect to PostgreSQL
-psql postgres://hermes:hermes_dev@localhost:5432/hermes
+## 🗄️ Database Schema
 
-# Example queries
-SELECT * FROM vehicles;
-SELECT * FROM routes WHERE status = 'active';
-SELECT * FROM route_segments ORDER BY start_time DESC LIMIT 10;
-```
+### Core Tables
+
+- **users**: User accounts, profiles, authentication
+- **servers**: Discord-like servers (guilds)
+- **channels**: Text, voice, and category channels
+- **messages**: Chat messages and attachments
+- **voice_sessions**: Active voice channel participants
+- **friendships**: Friend relationships and requests
+- **server_members**: Server membership and roles
+- **direct_messages**: Private message channels
+
+See `infra/postgres/init.sql` for complete schema.
+
+## 🔌 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login and get JWT token
+- `POST /api/auth/refresh` - Refresh access token
+
+### Users
+- `GET /api/users/@me` - Get current user
+- `PATCH /api/users/@me` - Update current user
+- `GET /api/users/{id}` - Get user by ID
+
+### Servers
+- `GET /api/servers` - List user's servers
+- `POST /api/servers` - Create new server
+- `GET /api/servers/{id}` - Get server details
+- `PATCH /api/servers/{id}` - Update server
+- `DELETE /api/servers/{id}` - Delete server
+
+### Channels
+- `GET /api/channels/{id}` - Get channel details
+- `POST /api/servers/{id}/channels` - Create channel
+- `PATCH /api/channels/{id}` - Update channel
+- `DELETE /api/channels/{id}` - Delete channel
+
+### Messages
+- `GET /api/channels/{id}/messages` - Get channel messages
+- `POST /api/channels/{id}/messages` - Send message
+- `PATCH /api/messages/{id}` - Edit message
+- `DELETE /api/messages/{id}` - Delete message
+
+### WebSocket Gateway
+- `wss://gateway/` - WebSocket connection for real-time events
+
+## 📊 Monitoring
+
+### Prometheus Metrics
+Access at: http://localhost:9090
+
+Example queries:
+- `up{job="gateway-service"}` - Service availability
+- `http_requests_total` - Total HTTP requests
+- `websocket_connections` - Active WebSocket connections
+
+### Grafana Dashboards
+Access at: http://localhost:3000 (admin/admin)
+
+Pre-configured dashboards for:
+- Service health and uptime
+- Message throughput
+- Active users and connections
+- Database performance
+
+### NATS Monitoring
+Access at: http://localhost:8222
 
 ## 🧪 Testing
 
@@ -144,67 +276,32 @@ SELECT * FROM route_segments ORDER BY start_time DESC LIMIT 10;
 # Run all tests
 cargo test --workspace
 
-# Run tests for specific crate
-cargo test -p common
-cargo test -p udp-ingestor
+# Run specific service tests
+cargo test -p chat-service
 
 # Run with output
 cargo test --workspace -- --nocapture
 
-# Run integration tests only
+# Run integration tests
 cargo test --workspace --test '*'
 ```
 
-## 📊 Observability
+## 📈 Performance Considerations
 
-### Prometheus Metrics
+- **WebSocket Scaling**: Use multiple gateway instances behind load balancer
+- **Database Sharding**: Shard by server ID for large deployments
+- **Redis Clustering**: Enable Redis cluster for high availability
+- **Media Server**: Deploy regional media servers for low latency
+- **CDN**: Use CDN for static assets and uploaded files
 
-Access at: http://localhost:9090
+## 🔐 Security
 
-Example queries:
-
-- `up{job="nats"}` - NATS availability
-- `go_memstats_alloc_bytes{job="nats"}` - NATS memory usage
-
-### Grafana Dashboards
-
-Access at: http://localhost:3000 (admin/admin)
-
-Dashboards will be added in Sprint 4.
-
-### NATS Monitoring
-
-Access at: http://localhost:8222
-
-- `/healthz` - Health check
-- `/varz` - General information
-- `/connz` - Connection information
-
-## 🛠️ Configuration
-
-All services use environment variables for configuration:
-
-```bash
-# Database
-DATABASE_URL=postgres://hermes:hermes_dev@localhost:5432/hermes
-
-# NATS
-NATS_URL=nats://localhost:4222
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# Logging
-RUST_LOG=info
-```
-
-## 📅 Development Roadmap
-
-- [x] **Sprint 0**: Foundation (workspace, infra, CI)
-- [ ] **Sprint 1**: UDP Ingestion Pipeline
-- [ ] **Sprint 2**: Location Processor
-- [ ] **Sprint 3**: Auth & Gateway API
-- [ ] **Sprint 4**: Observability & Production Readiness
+- JWT-based authentication with refresh tokens
+- Argon2 password hashing
+- Rate limiting on all endpoints
+- CORS configuration for web clients
+- SQL injection prevention via SQLx
+- Input validation with validator crate
 
 ## 🤝 Contributing
 
@@ -214,32 +311,13 @@ RUST_LOG=info
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-### Code Quality
+## 📝 License
 
-```bash
-# Format code
-cargo fmt --all
-
-# Run lints
-cargo clippy --all-targets --all-features -- -D warnings
-
-# Check documentation
-cargo doc --workspace --all-features --no-deps
-```
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for
-details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
-- Inspired by real-world ride-hailing telemetry systems
-- Built with amazing Rust ecosystem tools
-- PostgreSQL + PostGIS for geospatial capabilities
-
-## 📚 Additional Resources
-
-- [DEVELOPMENT.md](docs/DEVELOPMENT.md) - Detailed development guide
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - Architecture deep dive
-- [API.md](docs/API.md) - API documentation
+- Inspired by Discord's architecture
+- Built with the amazing Rust ecosystem
+- WebRTC for real-time communication
+- PostgreSQL for reliable data storage

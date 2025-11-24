@@ -1,11 +1,22 @@
 [package]
-name = "common"
+name = "user-service"
 version.workspace = true
 edition.workspace = true
 
+[[bin]]
+name = "user-service"
+path = "src/main.rs"
+
 [dependencies]
+common = { path = "../common" }
+
 # Async Runtime
 tokio.workspace = true
+
+# Web Framework
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
 
 # Serialization
 serde.workspace = true
@@ -24,13 +35,17 @@ chrono.workspace = true
 
 # Tracing
 tracing.workspace = true
+tracing-subscriber.workspace = true
 
 # Error Handling
 anyhow.workspace = true
 thiserror.workspace = true
 
+# Environment
+dotenvy.workspace = true
+
 # Validation
 validator.workspace = true
 
-# JWT
-jsonwebtoken.workspace = true
+# HTTP Client
+reqwest.workspace = true
